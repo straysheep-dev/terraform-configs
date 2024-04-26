@@ -135,6 +135,12 @@ terraform plan -out=infra.plan
 terraform apply "infra.plan"
 ```
 
+Once terraform is done, get the current state of the deployed resources (includes IP information):
+
+```bash
+terraform show
+```
+
 To stop and destroy / delete the resources:
 
 ```bash
@@ -146,8 +152,28 @@ terraform apply "destroy.plan"
 Secrets Management
 =================
 
-https://developer.hashicorp.com/vault/docs/what-is-vault
+## Quick Start: Environment Variables
 
-The hashicorp vault should be used to prevent secrets from appearing in scripts, configs, or environment variables.
+[Configure Terraform Environment Variables](https://docs.digitalocean.com/reference/terraform/deploy-web-app/#step-2-configure-terraform-environment-variables)
+
+Environment variables are almost always needed in some way for DevOps, and they're also the best option for passing secrets to scripts if you do not have some type of secrets manager.
+
+The DigitalOcean documentation (and other sources) use this method to read input and write a secret into an environment variable *without it appearing in the command line history*.
+
+- Avoids secrets appearing in `.bash_history`
+- This variable is only available within the current bash session (other processes can't easily read it)
+
+```bash
+echo "Enter API Key"; read api_key; export TF_VAR_do_token=$api_key
+echo $TF_VAR_do_token
+```
+
+
+## Vaults
 
 TO DO
+
+- https://developer.hashicorp.com/vault/docs/what-is-vault
+- https://bitwarden.com/help/secrets-manager-overview/
+
+Vaults (or secrets managers) should be used to prevent secrets from appearing in scripts, configs, or environment variables.
