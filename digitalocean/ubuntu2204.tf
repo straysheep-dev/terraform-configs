@@ -1,6 +1,7 @@
 resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
+  count = 1
   image = "ubuntu-22-04-x64"
-  name = "terraform-ubuntu-22-04-x64"
+  name = "terraform-ubuntu-22-04-x64-${count.index}"
   region = "sfo3"
   size = "s-1vcpu-1gb"
   ssh_keys = [

@@ -86,8 +86,9 @@ Write a terraform config file (`.tf`).
 
 ```tf
 resource "digitalocean_droplet" "terraform-test" {
+  count = 1
   image = "ubuntu-22-04-x64"
-  name = "terraform-test"
+  name = "terraform-test-${count.index}"
   region = "sfo3"
   size = "s-1vcpu-1gb"
   ssh_keys = [
@@ -149,6 +150,75 @@ terraform apply "destroy.plan"
 ```
 
 
+### Modifying Partial Resources in a Deployment
+
+[Force Recreation of Tainted Resources](https://developer.hashicorp.com/terraform/cli/state/taint#forcing-re-creation-of-resources)
+
+If one or more resources in a deployment fails to deploy correctly, it will appear in the `terraform show` output as `(tainted)`. You can replace the tainted resource(s) with `-replace=<resource-name>`, or destroy and re-apply them using the `-target=<resource-name>` option for each resource. In both cases this is done without tearing down the entire deployment.
+
+The resource ID is the commented line above each resource block. This is also where the `(tainted)` indicator will appear. For example:
+
+```json
+<SNIP>
+# digitalocean_droplet.some-resource[0]: (tainted)
+resource "digitalocean_droplet" "some-resource" {
+<SNIP>
+```
+
+Use `terraform show` to show all resource ID's in the current deployment, and parse out which ones need fixed.
+
+This bash snippet could be a starting point to iterate through *all tainted* resources and plan to replace them:
+
+```bash
+targets=""
+keyword='tainted'
+for resource in $(terraform show | grep -i "$keyword" | grep -P "^# \w+" | cut -d ' ' -f 2 | awk -F ':' '{print $1}'); do targets+="-replace=$resource "; done
+terraform plan $targets -out=replace.plan
+# terraform apply replace.plan
+```
+
+*TIP: replace the `keyword=` variable with another string if, for example a set of resources you can match based on a keyword is not necessarily tainted, but need reprovisioned.*
+
+Your `-replace` commands to fix tainted resources would be:
+
+```bash
+terraform plan -replace=digitalocean_droplet.some-resource[0] [-replace=digitalocean_droplet.some-resource[1] ...] -out=infra.plan
+terraform apply infra.plan
+```
+
+If you need to destroy resources instead of replace, this bash snippet could be a starting point to find all resources with "fedora" in the ID and plan to destroy them:
+
+```bash
+targets=""
+keyword='fedora'
+for resource in $(terraform show | grep -i "$keyword" | grep -P "^# \w+" | cut -d ' ' -f 2 | awk -F ':' '{print $1}'); do targets+="-target=$resource "; done
+terraform plan -destroy $targets -out=destroy.plan
+# terraform apply destroy.plan
+```
+
+The full `-target` commands to redeploy the resource(s) would be:
+
+```bash
+terraform plan -destroy -target=digitalocean_droplet.some-resource[0] [-target=digitalocean_droplet.some-resource[1] ...] -out=destroy.plan
+terraform apply destroy.plan
+terraform plan -target=digitalocean_droplet.some-resource[0] [-target=digitalocean_droplet.some-resource[1] ...] -out=infra.plan
+terraform apply infra.plan
+```
+
+
+Terraform + Ansible
+================
+
+If you plan to deploy resources with terraform, and provision them with ansible, you can easily generate an inventory file from within the terraform project working directory.
+
+```bash
+group_name='[remotegroup]'
+echo "$group_name" | tee inventory.ini; terraform show | grep -P '\bipv4_address\b' | awk -F'"' '{print $2":22 ansible_user=root"}' | tee -a inventory.ini
+```
+
+Reference the resulting file when using `ansible -i <inventory-file>`.
+
+
 Secrets Management
 =================
 
@@ -156,17 +226,16 @@ Secrets Management
 
 [Configure Terraform Environment Variables](https://docs.digitalocean.com/reference/terraform/deploy-web-app/#step-2-configure-terraform-environment-variables)
 
-Environment variables are almost always needed in some way for DevOps, and they're also the best option for passing secrets to scripts if you do not have some type of secrets manager.
+Environment variables are almost always needed in some way for DevOps, and they're also the best option for passing secrets to scripts if you do not have a vaulting solution.
 
-The DigitalOcean documentation (and other sources) use this method to read input and write a secret into an environment variable *without it appearing in the command line history*.
-
-- Avoids secrets appearing in `.bash_history`
-- This variable is only available within the current bash session (other processes can't easily read it)
+The DigitalOcean documentation (and other sources) use this method to read input to write a secret into an environment variable *without it appearing in the command line history*.
 
 ```bash
 echo "Enter API Key"; read api_key; export TF_VAR_do_token=$api_key
 echo $TF_VAR_do_token
 ```
+
+Using this method, the `api_key` environment variable only appears in the `env` of that shell session. Another shell running under the context of that user cannot see the `api_key` value.
 
 
 ## Vaults
