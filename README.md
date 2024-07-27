@@ -26,6 +26,10 @@ sudo apt update && sudo apt install terraform
 ```
 
 
+Platform Requirements
+====================
+
+
 ## terraform: Azure
 
 - [terraform + Azure](https://learn.microsoft.com/en-us/azure/developer/terraform/get-started-windows-powershell?tabs=bash)
@@ -150,6 +154,16 @@ terraform apply "destroy.plan"
 ```
 
 
+### Deploy Specific Resources
+
+If you have multiple `.tf` files in a project, but only want to deploy one or some of them, use the `-target=<some.resource>` option.
+
+```bash
+terraform plan -target=digitalocean_droplet.some-resource[0] [-target=digitalocean_droplet.some-resource[1] ...] -out=infra.plan
+terraform apply infra.plan
+```
+
+
 ### Modifying Partial Resources in a Deployment
 
 [Force Recreation of Tainted Resources](https://developer.hashicorp.com/terraform/cli/state/taint#forcing-re-creation-of-resources)
@@ -231,8 +245,7 @@ Environment variables are almost always needed in some way for DevOps, and they'
 The DigitalOcean documentation (and other sources) use this method to read input to write a secret into an environment variable *without it appearing in the command line history*.
 
 ```bash
-echo "Enter API Key"; read api_key; export TF_VAR_do_token=$api_key
-echo $TF_VAR_do_token
+echo "Enter API Key"; read -s api_key; export TF_VAR_do_token=$api_key
 ```
 
 Using this method, the `api_key` environment variable only appears in the `env` of that shell session. Another shell running under the context of that user cannot see the `api_key` value.

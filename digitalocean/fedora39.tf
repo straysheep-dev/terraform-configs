@@ -21,7 +21,7 @@ resource "digitalocean_droplet" "terraform-fedora-39-x64" {
   provisioner "remote-exec" {
     inline = [
       "sudo dnf upgrade -yq",
-      "sudo dnf install -yq python3-pip git tmux firewalld",
+      "sudo dnf install -yq python3-pip git tmux firewalld zip",
       "sudo systemctl unmask firewalld",
       "sudo systemctl start firewalld",
       "sudo systemctl enable firewalld",

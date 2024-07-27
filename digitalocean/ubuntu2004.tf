@@ -1,7 +1,7 @@
-resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
+resource "digitalocean_droplet" "terraform-ubuntu-20-04-x64" {
   count = 1
-  image = "ubuntu-22-04-x64"
-  name = "terraform-ubuntu-22-04-x64-${count.index}"
+  image = "ubuntu-20-04-x64"
+  name = "terraform-ubuntu-20-04-x64-${count.index}"
   region = "sfo3"
   size = "s-1vcpu-1gb"
   ssh_keys = [
@@ -22,12 +22,9 @@ resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
     inline = [
       "export PATH=$PATH:/usr/bin",
       "export DEBIAN_FRONTEND=noninteractive",
-      # `needrestart` is new in 22.04+
-      # https://github.com/liske/needrestart/issues/109
-      #"export NEEDRESTART_SUSPEND=1",
       # Update the package cache, enable UFW, install ansible, add a public GPG key, clone git repos
       "apt-get update -yq",
-      "NEEDRESTART_MODE=a apt-get dist-upgrade -yq",
+      "apt-get dist-upgrade -yq",
       "ufw allow ssh",
       # Hide last login when connecting over ssh
       "sed -i_bkup 's/^.*PrintLastLog.*$/PrintLastLog no/' /etc/ssh/sshd_config",

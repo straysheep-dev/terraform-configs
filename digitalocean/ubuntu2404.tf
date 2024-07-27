@@ -1,7 +1,7 @@
-resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
+resource "digitalocean_droplet" "terraform-ubuntu-24-04-x64" {
   count = 1
-  image = "ubuntu-22-04-x64"
-  name = "terraform-ubuntu-22-04-x64-${count.index}"
+  image = "ubuntu-24-04-x64"
+  name = "terraform-ubuntu-24-04-x64-${count.index}"
   region = "sfo3"
   size = "s-1vcpu-1gb"
   ssh_keys = [
@@ -32,8 +32,12 @@ resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
       # Hide last login when connecting over ssh
       "sed -i_bkup 's/^.*PrintLastLog.*$/PrintLastLog no/' /etc/ssh/sshd_config",
       "echo 'y' | sudo ufw enable",
-      "apt install -yq python3-pip zip",
-      "python3 -m pip install --user ansible",
+      # Starting with Ubuntu 23.04+ install pipx from apt, then use pipx to install Ansible
+      # https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx
+      "apt install -yq python3-pip zip pipx",
+      "pipx ensurepath",
+      "pipx ensurepath --global",
+      "pipx install --include-deps ansible",
       "gpg --keyid-format long --keyserver hkps://keyserver.ubuntu.com:443 --recv-keys '9906 9EB1 2D40 9EA9 3BD1  E52E B09D 00AE C481 71E0'",
       "cd ~/; git clone https://github.com/straysheep-dev/ansible-configs.git",
       "cd ~/; git clone https://github.com/straysheep-dev/linux-configs.git",
