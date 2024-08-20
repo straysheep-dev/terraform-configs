@@ -1,8 +1,32 @@
+terraform {
+  required_providers {
+    digitalocean = {
+      source = "digitalocean/digitalocean"
+      version = "~> 2.0"
+    }
+  }
+}
+
+variable "do_token" {}
+# Uncomment "pvt_key" if using a passwordless private key file
+#variable "pvt_key" {}
+variable "key_name" {}
+variable "region_choice" {}
+
+provider "digitalocean" {
+  token = var.do_token
+}
+
+data "digitalocean_ssh_key" "terraform" {
+  # Use the name of a public key available in your DigitalOcean account.
+  name = var.key_name
+}
+
 resource "digitalocean_droplet" "terraform-ubuntu-20-04-x64" {
   count = 1
   image = "ubuntu-20-04-x64"
   name = "terraform-ubuntu-20-04-x64-${count.index}"
-  region = "sfo3"
+  region = var.region_choice
   size = "s-1vcpu-1gb"
   ssh_keys = [
     data.digitalocean_ssh_key.terraform.id
@@ -11,9 +35,9 @@ resource "digitalocean_droplet" "terraform-ubuntu-20-04-x64" {
     host = self.ipv4_address
     user = "root"
     type = "ssh"
-    # Use `private_key` if you're using a private key file
+    # uncomment `private_key` if you're using a passwordless private key file
     #private_key = file(var.pvt_key)
-    # Use `agent = true` if your ssh key is on a Yubikey and the agent can read it
+    # uncomment `agent = true` if your ssh key is loaded into the ssh-agent (includes Yubikeys via gpg)
     # Be patient while it's "Still creating...", it can take a minute or two before the Yubikey is called
     agent = true
     timeout = "2m"
@@ -22,12 +46,13 @@ resource "digitalocean_droplet" "terraform-ubuntu-20-04-x64" {
     inline = [
       "export PATH=$PATH:/usr/bin",
       "export DEBIAN_FRONTEND=noninteractive",
-      # Update the package cache, enable UFW, install ansible, add a public GPG key, clone git repos
+      # Upgrade packages
       "apt-get update -yq",
       "apt-get dist-upgrade -yq",
-      "ufw allow ssh",
       # Hide last login when connecting over ssh
       "sed -i_bkup 's/^.*PrintLastLog.*$/PrintLastLog no/' /etc/ssh/sshd_config",
+      # Enable UFW
+      "ufw allow ssh",
       "echo 'y' | sudo ufw enable",
       "apt install -yq python3-pip zip",
       "python3 -m pip install --user ansible",
@@ -37,4 +62,11 @@ resource "digitalocean_droplet" "terraform-ubuntu-20-04-x64" {
       "systemctl reboot"
     ]
   }
+}
+
+# If resource names use ${count.index}, you must iterate with for loops when doing output values or use Splat Expressions [*].
+# https://developer.hashicorp.com/terraform/language/expressions/for
+# https://www.digitalocean.com/community/tutorials/how-to-manage-infrastructure-data-with-terraform-outputs#outputting-complex-structures
+output "droplet_ip_address" {
+  value = digitalocean_droplet.terraform-ubuntu-20-04-x64[*].ipv4_address
 }
