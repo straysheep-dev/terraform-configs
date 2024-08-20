@@ -1,6 +1,6 @@
 # README
 
-Deploy RITA in DigitalOcean.
+Deploy RITA in DigitalOcean. The files in this directory are released under the [GPL-3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
 To set the necessary environment variables, both `deploy.sh` and `destroy.sh` will require the following. This block can be copy and pasted into your terminal session so the variables persist between each script execution. Otherwise you need to enter them each time you execute one of the scripts, or run them from a new terminal tab / session.
 

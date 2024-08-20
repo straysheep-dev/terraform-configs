@@ -42,6 +42,8 @@ resource "digitalocean_droplet" "terraform-ubuntu-24-04-x64" {
       # https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx
       "apt install -yq zip",
       # Install RITA
+      # This download method was learned and adapted from the Sliver C2 installer script.
+      # https://github.com/BishopFox/sliver/blob/127caf54ae22c42fef4cfcabed244daa372073f5/docs/sliver-docs/public/install#L98
       "ARTIFACTS=$(curl -s https://api.github.com/repos/activecm/rita/releases/latest | awk -F '\"' '/browser_download_url/{print $4}' | grep 'tar.gz'); export ARTIFACTS",
       "VERSION=$(curl -s https://api.github.com/repos/activecm/rita/releases/latest | awk -F '\"' '/tag_name/{print $4}'); export VERSION",
       "for URL in $ARTIFACTS; do wget $URL; ARCHIVE=$(basename $URL); tar -xf $ARCHIVE; done",
