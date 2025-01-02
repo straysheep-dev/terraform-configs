@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     digitalocean = {
-      source = "digitalocean/digitalocean"
+      source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
   }
@@ -23,11 +23,11 @@ data "digitalocean_ssh_key" "terraform" {
 }
 
 resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
-  count = 1
-  image = "ubuntu-22-04-x64"
-  name = "terraform-ubuntu-22-04-x64-${count.index}"
+  count  = 1
+  image  = "ubuntu-22-04-x64"
+  name   = "terraform-ubuntu-22-04-x64-${count.index}"
   region = var.region_choice
-  size = "s-1vcpu-1gb"
+  size   = "s-1vcpu-1gb"
   ssh_keys = [
     data.digitalocean_ssh_key.terraform.id
   ]
@@ -39,7 +39,7 @@ resource "digitalocean_droplet" "terraform-ubuntu-22-04-x64" {
     #private_key = file(var.pvt_key)
     # uncomment `agent = true` if your ssh key is loaded into the ssh-agent (includes Yubikeys via gpg)
     # Be patient while it's "Still creating...", it can take a minute or two before the Yubikey is called
-    agent = true
+    agent   = true
     timeout = "2m"
   }
   provisioner "remote-exec" {

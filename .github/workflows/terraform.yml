@@ -1,0 +1,68 @@
+# .github/workflows/terraform.yml
+
+# Taken from:
+# https://github.com/hashicorp/setup-terraform
+# https://github.com/hashicorp/setup-packer
+# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables
+
+name: terraform
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  PRODUCT_VERSION: "latest"
+  PATHS: |
+    digitalocean/fedora39/
+    digitalocean/rita/
+    digitalocean/ubuntu2204/
+    digitalocean/ubuntu2004/
+    digitalocean/ubuntu2404/
+
+jobs:
+  packer:
+    runs-on: ubuntu-latest
+    name: Run Terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        id: setup
+        with:
+          version: ${{ env.PRODUCT_VERSION }}
+
+      - name: Terraform Init
+        id: init
+        run: |
+          for path in $PATHS
+          do
+            cd "$path"
+            terraform init
+            cd ../../
+          done
+
+      - name: Terraform fmt
+        id: fmt
+        run: |
+          for path in $PATHS
+          do
+            cd "$path"
+            terraform fmt -check
+            cd ../../
+          done
+        continue-on-error: false
+
+      - name: Terraform Validate
+        id: validate
+        run: |
+          for path in $PATHS
+          do
+            cd "$path"
+            terraform validate -no-color
+            cd ../../
+          done
